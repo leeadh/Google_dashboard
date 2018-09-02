@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>
+    Google Visualization API Sample
+  </title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/js/bootstrap.min.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyABaW0uVjZPPeCxDWzdqFTCtaj6I4mx524"></script>
+  <script type="text/javascript">
+
+    google.load('visualization', '1', { packages: ['controls', 'corechart', 'geochart', 'table'], 'mapsApiKey': 'AIzaSyABaW0uVjZPPeCxDWzdqFTCtaj6I4mx524' });
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js" type="text/javascript"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script type="text/javascript">
+
+    function drawVisualization() {
+      control1 = createDashboard1();
+      control2 = createDashboard2();
+      control3 = createDashboard3();
+      control4 = createDashboard4();
+      control5 = drawTable();
+
+      google.visualization.events.addListener(control1, 'statechange', function () {
+        control2.setState(control1.getState());
+        control2.draw();
+
+        control3.setState(control1.getState());
+        control3.draw();
+
+        control4.setState(control1.getState());
+        control4.draw();
+
+      });
+    }
+
+    function drawTable() {
+      var data = new google.visualization.DataTable();
+      data_results = [];
+      var json_results = getData('http://localhost:9999/topfivecarsbyprice')
+      for (var i = 0; i < json_results.length; i++) {
+        var value = json_results[i];
+        data_results.push([value["region"], value["title"], value["price"]])
+      }
+      data.addColumn('string', 'Region');
+      data.addColumn('string', 'Title');
+      data.addColumn('number', 'Price');
+      data.addRows(data_results);
+
+      var table = new google.visualization.Table(document.getElementById('table_div'));
+
+      table.draw(data, { showRowNumber: true, width: '100%', height: '100%' });
+    }
+
+    function createCustomHTMLContent(imageURL, title, totalCount, region) {
+      return '<div style="padding:5px 5px 5px 5px;">' +
+        '<img src="' + imageURL + '" style="width:75px;height:50px"><br/>' +
+        '<table class="medals_layout">' + '<tr>' +
+        '<td><b>Name: ' + title + '</b></td>' + '</tr>' + '<tr>' +
+        '<td><b>count: ' + totalCount + '</b></td>' + '</tr>' + '<tr>' + '</table>' + '</div>';
+    }
+
+    function getData(url) {
+      var json = (function () {
+        var json = null;
+        $.ajax({
+          'async': false,
+          'global': false,
+          'url': url,
+          'dataType': "json",
+          'success': function (data) {
+            json = data;
+          }
+        });
+        return json;
+      })();
+
+      return json;
+    }
+
+    function getRandomColor(n) {
+      var letters = '0123456789ABCDEF';
+
+      var arr = [];
+      for (var i = 0; i < n; i++) {
+        var color = '#';
+        for (var j = 0; j < 6; j++) {
+
+          color += letters[Math.floor(Math.random() * 16)];
+
+        }
+
+        color = '' + color
+        arr.push(color)
+
+      }
+
+      return arr;
+
+    }
+
+    function createDashboard1() {
+      // Prepare the data.
+      var json_results = getData('http://localhost:9999/countcarbyregion')
+      data_results = []
+      var Header = ['region', 'count'];
+      data_results.push(Header)
+      for (var i = 0; i < json_results.length; i++) {
+        var value = json_results[i];
+        data_results.push([value["_id"], value["countofcars"]])
+      }
+
+      var data = google.visualization.arrayToDataTable(data_results);
+
+      // Define a StringFilter control for the 'Name' column
+      var stringFilter = new google.visualization.ControlWrapper({
+        'controlType': 'StringFilter',
+        'containerId': 'control1',
+        'options': {
+          'filterColumnLabel': 'region'
+        }
+      });
+
+      // Define a table visualization
+      var table = new google.visualization.ChartWrapper({
+        'chartType': 'PieChart',
+        'containerId': 'chart1',
+        'options': {
+          'width': 500,
+          'height': 300,
+          'pieSliceText': 'value',
+          'legend': 'right',
+          'title': 'Breakdown of car count by region'
+        }
+      });
+
+      // Create the dashboard.
+      var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard')).
+        // Configure the string filter to affect the table contents
+        bind(stringFilter, table).
+        // Draw the dashboard
+        draw(data);
+
+      return stringFilter;
+    }
+
+    function createDashboard2() {
+      // Prepare the data.
+      var json_results = getData('http://localhost:9999/countcarbyregion')
+      data_results = []
+
+      data_results = []
+      var Header = ['region', 'count'];
+      data_results.push(Header)
+      for (var i = 0; i < json_results.length; i++) {
+        var value = json_results[i];
+        data_results.push([value["_id"], value["countofcars"]])
+      }
+
+      arr_colors = getRandomColor(data_results.length)
+      var data = google.visualization.arrayToDataTable(data_results);
+
+      // Define a StringFilter control for the 'Name' column
+      var stringFilter = new google.visualization.ControlWrapper({
+        'controlType': 'StringFilter',
+        'containerId': 'control2',
+        'options': {
+          'filterColumnLabel': 'region'
+        }
+      });
+
+      // Define a table visualization
+      var table = new google.visualization.ChartWrapper({
+        'chartType': 'GeoChart',
+        'containerId': 'chart2',
+        'options': {
+          'region': 'IN',
+          'displayMode': 'markers',
+          'backgroundColor': '#81d4fa',
+          'datalessRegionColor': '#f8bbd0',
+          'defaultColor': '#f5f5f5',
+          'colors': arr_colors,
+          'width': 400,
+          'height': 300,
+          'title': 'Breakdown of car count by region'
+        }
+      });
+
+      // Create the dashboard.
+      var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard')).
+        // Configure the string filter to affect the table contents
+        bind(stringFilter, table).
+        // Draw the dashboard
+        draw(data);
+
+      return stringFilter;
+    }
+
+
+
+    function createDashboard3() {
+      var json_results = getData('http://localhost:9999/countcarbyyear')
+
+      data_results = []
+      regions = [];
+      var Header = ['year', 'region', 'count'];
+      data_results.push(Header)
+      for (var i = 0; i < json_results.length; i++) {
+        var year = json_results[i]["_id"]["man_year"];
+        var region = json_results[i]["_id"]["region"];
+        var count = json_results[i]["countofcars"];
+        data_results.push({ year, region, count })
+        //data_results.push([value["_id"], value["countofcars"], value["regions"]])
+      }
+      data_results = data_results.sort(function (a, b) { return a.year - b.year });
+      console.log(data_results)
+      var region = [], output_reions = [], years = [], output_year = [], l = data_results.length, i;
+      for (i = 0; i <= data_results.length; i++) {
+        console.log(data_results[i])
+      }
+
+
+      for (i = 0; i <= data_results.length; i++) {
+        if (region[data_results[i].region]) continue;
+        region[data_results[i].region] = true;
+        output_reions.push(data_results[i].region);
+        //console.log(data_results[i].year)
+        if (years[data_results[i].year]) continue;
+        years[data_results[i].year] = true;
+        
+        output_year.push(data_results[i].year);
+      }
+
+      output_year = output_year.filter(function (element) {
+        return element !== undefined;
+      });
+
+      
+      output_reions = output_reions.filter(function (element) {
+        return element !== undefined;
+      });
+
+      console.log(output_reions)
+      
+      console.log(data_results)
+      arr = []
+      for (i = 0; i < data_results.length; i++) {
+        temp = []
+        for (j = 0; j < output_year.length; j++) {
+          for (k = 0; k < output_reions.length; k++) {
+            if (data_results[i]["year"] == output_year[j]) {
+
+              if (data_results[i]["region"] == output_reions[k]) {
+
+                temp.push(data_results[i]["count"])
+              } else {
+
+                temp.push(0)
+              }
+            }
+          }
+        }
+
+        console.log(temp)
+      }
+      var data = google.visualization.arrayToDataTable(data_results);
+      // Define a StringFilter control for the 'Name' column
+      var stringFilter = new google.visualization.ControlWrapper({
+        'controlType': 'StringFilter',
+        'containerId': 'control3',
+        'options': {
+          'filterColumnLabel': 'region',
+
+        }
+      });
+
+      // Define a table visualization
+      var table = new google.visualization.ChartWrapper({
+        'chartType': 'ColumnChart',
+        'containerId': 'chart3',
+        'options': { 'height': 250, 'width': 500, 'title': 'Count of cars by Manufactured year', 'hAxis': { format: '####' }, 'legend': 'none', 'colors': ['#e0440e'] },
+        'view': { 'columns': [0, 1] }
+      });
+
+
+      // Create the dashboard.
+      var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard')).
+        // Configure the string filter to affect the table contents
+        bind(stringFilter, table).
+        // Draw the dashboard
+        draw(data);
+
+      return stringFilter;
+    }
+
+    function createDashboard4() {
+      var json_results = getData('http://localhost:9999/countcarbytype')
+      data_results = []
+      var Header = ['car Type', 'count', 'region', { 'type': 'string', 'role': 'tooltip', 'p': { 'html': true } }];
+      data_results.push(Header)
+      for (var i = 0; i < json_results.length; i++) {
+        var value = json_results[i];
+        var URL = "" + value["imageURL"][0]
+
+        data_results.push([value["_id"]["title"], value["countofcars"], value["_id"]["region"], createCustomHTMLContent(URL, value["_id"]["title"], value["countofcars"], value["_id"]["region"])]);
+      }
+      //console.log(data_results)
+      var data = google.visualization.arrayToDataTable(data_results);
+
+
+      // Define a StringFilter control for the 'Name' column
+      var stringFilter = new google.visualization.ControlWrapper({
+        'controlType': 'StringFilter',
+        'containerId': 'control4',
+        'options': {
+          'filterColumnLabel': 'region'
+        }
+      });
+
+      // Define a table visualization
+      var table = new google.visualization.ChartWrapper({
+        'chartType': 'BarChart',
+        'containerId': 'chart4',
+        'options': { 'height': 400, 'width': 700, 'title': 'Count of cars by Model Type', 'legend': 'none', 'tooltip': { isHtml: true } },
+        'view': { 'columns': [0, 1, 3] }
+      });
+
+      // Create the dashboard.
+      var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard')).
+        // Configure the string filter to affect the table contents
+        bind(stringFilter, table).
+        // Draw the dashboard
+        draw(data);
+
+      return stringFilter;
+    }
+
+
+    function createDashboard5() {
+      // Prepare the data.
+      var json_results = getData('http://localhost:9999/countcarbyregion')
+      var Header = ['region', 'title', 'price'];
+      data_results = [];
+      data_results.push(Header)
+      var json_results = getData('http://localhost:9999/topfivecarsbyprice')
+      for (var i = 0; i < json_results.length; i++) {
+        var value = json_results[i];
+        data_results.push([value["region"], value["title"], value["price"]])
+      }
+
+      var data = google.visualization.arrayToDataTable(data_results);
+
+      // Define a StringFilter control for the 'Name' column
+      var stringFilter = new google.visualization.ControlWrapper({
+        'controlType': 'StringFilter',
+        'containerId': 'control5',
+        'options': {
+          'filterColumnLabel': 'region'
+        }
+      });
+
+      // Define a table visualization
+      var table = new google.visualization.ChartWrapper({
+        'chartType': 'Table',
+        'containerId': 'chart5',
+        'options': {
+          'width': 500,
+          'height': 300,
+          'pieSliceText': 'value',
+          'legend': 'right',
+          'title': 'Breakdown of car count by region'
+        }
+      });
+
+      // Create the dashboard.
+      var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard')).
+        // Configure the string filter to affect the table contents
+        bind(stringFilter, table).
+        // Draw the dashboard
+        draw(data);
+
+      return stringFilter;
+    }
+
+    google.setOnLoadCallback(drawVisualization);
+
+  </script>
+</head>
+
+<body style="font-family: Arial;border: 0 none;">
+
+
+  <div id="dashboard">
+
+
+    <table>
+      <tr style='vertical-align: top'>
+
+
+        <td style='width: 300px;'>
+          <div id="control1"></div>
+          <div id="control2" style="display:none"></div>
+          <div id="control3" style="display:none"></div>
+          <div id="control4" style="display:none"></div>
+          <div id="control5" style="display:none"></div>
+        </td>
+        <td style='width: 500px'>
+          <div id="table_div"></div>
+        </td>
+        <td style='width: 100px'>
+          <div style="float: left;" id="chart1"></div>
+          <div style="float: left;" id="chart2"></div>
+        </td>
+
+        <td style='width: 100px'>
+          <div style="float: left;" id="chart3"></div>
+          <div style="float: left;" id="chart4"></div>
+        </td>
+
+      </tr>
+    </table>
+
+</body>
+
+</html>
